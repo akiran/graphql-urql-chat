@@ -1,78 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 import gql from "graphql-tag";
-import { graphql } from "react-apollo";
+import { useMutation } from "urql";
 import uuid from "uuid";
 
-export class MessageInput extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      text: ""
-    };
-  }
-  setText = e => {
-    this.setState({
-      text: e.target.value
-    });
-  };
-  addMessage = e => {
-    if (!this.state.text) {
+export default function MessageInput() {
+  const [text, setText] = useState("");
+  const [res, executeMutation] = useMutation(addMessageMutation);
+  async function addMessage(e) {
+    if (!text) {
       return;
     }
     if (e.key === "Enter") {
       console.log("send");
       const newID = uuid.v4();
-      this.props.mutate({
-        variables: {
-          text: this.state.text,
-          id: newID
-        },
-        optimisticResponse: {
-          __typename: "Mutation",
-          addMessage: {
-            __typename: "Message",
-            id: newID,
-            text: this.state.text
-          }
-        },
-        update: (store, { data: { addMessage } }) => {
-          const data = store.readQuery({
-            query: messagesQuery
-          });
-          if (!data.messages.find(message => message.id === addMessage.id)) {
-            data.messages = [...data.messages, addMessage];
-            store.writeQuery({
-              query: messagesQuery,
-              data
-            });
-          }
-        }
+      await executeMutation({
+        text,
+        id: newID
       });
-      this.setState({ text: "" });
+      setText("");
     }
-  };
-  render() {
-    return (
-      <div>
-        <input
-          className="form-control"
-          value={this.state.text}
-          onChange={this.setText}
-          onKeyDown={this.addMessage}
-        />
-      </div>
-    );
   }
+  return (
+    <div>
+      <input
+        className="form-control"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={addMessage}
+      />
+    </div>
+  );
 }
-
-const messagesQuery = gql`
-  {
-    messages {
-      id
-      text
-    }
-  }
-`;
 
 const addMessageMutation = gql`
   mutation addMessageMutation($id: ID!, $text: String!) {
@@ -82,5 +40,3 @@ const addMessageMutation = gql`
     }
   }
 `;
-
-export default graphql(addMessageMutation)(MessageInput);

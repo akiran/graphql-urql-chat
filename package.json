@@ -5,6 +5,7 @@
   "dependencies": {
     "apollo-server-express": "^2.6.7",
     "graphql": "^14.4.2",
+    "morgan": "^1.9.1",
     "nodemon": "^1.19.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
